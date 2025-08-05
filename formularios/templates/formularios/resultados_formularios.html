@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resultados de Formularios</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        .container { max-width: 900px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 8px; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #007bff; color: #fff; }
+        tr:nth-child(even) { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Resultados de Formularios</h2>
+        {% for resultado in resultados %}
+            <h3>{{ resultado.formulario.nombre }}</h3>
+            <table>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Puntaje Total</th>
+                    <th>Fecha de Respuesta</th>
+                    <th>Calificación</th>
+                </tr>
+                {% for usuario in resultado.usuarios %}
+                <tr>
+                    <td>{{ usuario.nombre }}</td>
+                    <td>{{ usuario.puntaje }}</td>
+                    <td>{{ usuario.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ usuario.calificacion }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No hay respuestas para este formulario.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
+</body>
+</html>

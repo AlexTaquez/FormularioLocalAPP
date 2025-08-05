@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seleccionar Formulario</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        .container { max-width: 500px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 8px; }
+        h2 { text-align: center; }
+        .formulario-lista { list-style: none; padding: 0; }
+        .formulario-lista li { margin: 15px 0; }
+        .formulario-link { display: block; padding: 12px; background: #007bff; color: #fff; text-decoration: none; border-radius: 5px; text-align: center; }
+        .formulario-link:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Selecciona un formulario</h2>
+        <ul class="formulario-lista">
+            {% for formulario in formularios %}
+                <li>
+                    <a class="formulario-link" href="{% url 'responder_formulario' formulario.id %}">
+                        {{ formulario.nombre }}
+                    </a>
+                </li>
+            {% empty %}
+                <li>No hay formularios disponibles.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

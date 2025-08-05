@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ formulario.nombre }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 8px; }
+        .pregunta-img { max-width: 100%; margin-bottom: 15px; }
+        .opcion { margin: 10px 0; }
+        .btn { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
+        #nombre-completo { width: 100%; padding: 8px; margin-bottom: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>{{ formulario.nombre }}</h2>
+        <p>{{ formulario.descripcion }}</p>
+        <input type="text" id="nombre-completo" placeholder="Ingresa tu nombre completo" required>
+        <div id="pregunta-container"></div>
+        <button id="siguiente-btn" class="btn hidden">Siguiente</button>
+        <button id="enviar-btn" class="btn hidden">Enviar</button>
+    </div>
+    <script>
+        const preguntas = [
+            {% for pregunta in preguntas %}
+            {
+                id: {{ pregunta.id }},
+                texto: "{{ pregunta.texto|escapejs }}",
+                imagen: "{% if pregunta.imagen %}{{ pregunta.imagen.url }}{% else %}{% endif %}",
+                opciones: [
+                    {% for opcion in pregunta.opciones.all %}
+                    { id: {{ opcion.id }}, texto: "{{ opcion.texto|escapejs }}" },
+                    {% endfor %}
+                ]
+            },
+            {% endfor %}
+        ];
+        let actual = 0;
+        let respuestas = [];
+        const preguntaContainer = document.getElementById('pregunta-container');
+        const siguienteBtn = document.getElementById('siguiente-btn');
+        const enviarBtn = document.getElementById('enviar-btn');
+        const nombreInput = document.getElementById('nombre-completo');
+
+        function mostrarPregunta(idx) {
+            if (idx >= preguntas.length) return;
+            const pregunta = preguntas[idx];
+            let html = `<h3>Pregunta ${idx + 1} de ${preguntas.length}</h3>`;
+            if (pregunta.imagen) {
+                html += `<img src="${pregunta.imagen}" class="pregunta-img">`;
+            }
+            html += `<p>${pregunta.texto}</p>`;
+            pregunta.opciones.forEach(op => {
+                html += `
+                    <div class="opcion">
+                        <input type="radio" name="opcion" id="opcion${op.id}" value="${op.id}">
+                        <label for="opcion${op.id}">${op.texto}</label>
+                    </div>
+                `;
+            });
+            preguntaContainer.innerHTML = html;
+            siguienteBtn.classList.remove('hidden');
+            enviarBtn.classList.add('hidden');
+            if (idx === preguntas.length - 1) {
+                siguienteBtn.classList.add('hidden');
+                enviarBtn.classList.remove('hidden');
+            }
+        }
+
+        function obtenerOpcionSeleccionada() {
+            const radios = document.getElementsByName('opcion');
+            for (let radio of radios) {
+                if (radio.checked) return radio.value;
+            }
+            return null;
+        }
+
+        siguienteBtn.onclick = function() {
+            const opcion = obtenerOpcionSeleccionada();
+            if (!opcion) {
+                alert('Selecciona una opción');
+                return;
+            }
+            respuestas[actual] = opcion;
+            actual++;
+            mostrarPregunta(actual);
+        };
+
+        enviarBtn.onclick = function() {
+            const opcion = obtenerOpcionSeleccionada();
+            if (!opcion) {
+                alert('Selecciona una opción');
+                return;
+            }
+            respuestas[actual] = opcion;
+            const nombre = nombreInput.value.trim();
+            if (!nombre) {
+                alert('Ingresa tu nombre completo');
+                return;
+            }
+            // Enviar respuestas por AJAX
+            fetch("{% url 'guardar_respuesta' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    nombre_completo: nombre,
+                    formulario_id: {{ formulario.id }},
+                    respuestas: preguntas.map((p, i) => ({
+                        pregunta_id: p.id,
+                        opcion_id: respuestas[i]
+                    }))
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    preguntaContainer.innerHTML = "<h3>¡Gracias por responder!</h3>";
+                    enviarBtn.classList.add('hidden');
+                    nombreInput.disabled = true;
+                } else {
+                    alert(data.error || "Error al guardar respuestas");
+                }
+            });
+        };
+
+        // Inicializar
+        mostrarPregunta(actual);
+    </script>
+</body>
+</html>
